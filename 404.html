@@ -8,7 +8,11 @@
 <meta property="og:image" content="https://blog.illi.me/image/avatar.jpg">
 <meta property="article:author" content="Li Yao">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://blog.illi.me/image/avatar.jpg"><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://blog.illi.me/404"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/node-snackbar/dist/snackbar.min.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = { 
+<meta name="twitter:image" content="https://blog.illi.me/image/avatar.jpg"><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://blog.illi.me/404"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//www.google-analytics.com" crossorigin=""/><link rel="preconnect" href="//busuanzi.ibruce.info"/><meta name="google-site-verification" content="F1I5Vjnkg_7Q9yAgOoG4cbiFeBWZemlBOlqqLGea7qU"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/node-snackbar/dist/snackbar.min.css" media="print" onload="this.media='all'"><script async="async" src="https://www.googletagmanager.com/gtag/js?id=G-ZMBB929J0F"></script><script>window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-ZMBB929J0F');
+</script><script>const GLOBAL_CONFIG = { 
   root: '/',
   algolia: undefined,
   localSearch: undefined,
@@ -54,7 +58,7 @@
   isHome: false,
   isHighlightShrink: undefined,
   isToc: false,
-  postUpdate: '2021-03-20 12:04:36'
+  postUpdate: '2021-03-20 12:26:10'
 }</script><noscript><style type="text/css">
   #nav {
     opacity: 1
@@ -153,7 +157,7 @@ var pjax = new Pjax({
   elements: 'a:not([target="_blank"]):not([href="/music/"]):not([href="/no-pjax/"])',
   selectors: pjaxSelectors,
   cacheBust: false,
-  analytics: false,
+  analytics: true,
   scrollRestoration: false
 })
 
@@ -174,7 +178,7 @@ document.addEventListener('pjax:complete', function () {
   typeof panguInit === 'function' && panguInit()
 
   // google analytics
-  typeof gtag === 'function' && gtag('config', '', {'page_path': window.location.pathname});
+  typeof gtag === 'function' && gtag('config', 'G-ZMBB929J0F', {'page_path': window.location.pathname});
 
   // baidu analytics
   typeof _hmt === 'object' && _hmt.push(['_trackPageview',window.location.pathname]);
