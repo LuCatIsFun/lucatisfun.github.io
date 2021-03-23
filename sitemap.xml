@@ -2,6 +2,13 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>https://blog.illi.me/resume/index.html</loc>
+    
+    <lastmod>2021-03-23</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>https://blog.illi.me/tags/index.html</loc>
     
     <lastmod>2021-03-23</lastmod>
@@ -9,14 +16,14 @@
   </url>
   
   <url>
-    <loc>https://blog.illi.me/google3f29e48c16bac92f.html</loc>
+    <loc>https://blog.illi.me/about/index.html</loc>
     
     <lastmod>2021-03-23</lastmod>
     
   </url>
   
   <url>
-    <loc>https://blog.illi.me/about/index.html</loc>
+    <loc>https://blog.illi.me/google3f29e48c16bac92f.html</loc>
     
     <lastmod>2021-03-23</lastmod>
     
@@ -31,13 +38,6 @@
   
   <url>
     <loc>https://blog.illi.me/link/index.html</loc>
-    
-    <lastmod>2021-03-23</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>https://blog.illi.me/resume/index.html</loc>
     
     <lastmod>2021-03-23</lastmod>
     
