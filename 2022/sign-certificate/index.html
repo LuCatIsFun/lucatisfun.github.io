@@ -1,0 +1,298 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OpenSSL使用中继证书签发业务证书【兼容IOS设备】 | LiYao′s Blog</title><meta name="keywords" content="GEN10PLUS,ILO,https,ssl,证书"><meta name="author" content="Li Yao,i@lucat.fun"><meta name="copyright" content="Li Yao"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="按照网上教程折腾一翻，发现签发的证书无法在IOS设备上信任，本篇总结了折腾的经过。 背景随着nas兴起，在搭建了plex，zerotier众多服务后，需要一个nginx代理整体内网流量。虽然有三个月免费的泛域名，但是来来回回挺麻烦的，不如直接自签一个 之前研究过自签证书，出现过ios这边证书有问题，但是其他环境没问题的情况。 这里也是想给nginx创建一个，踩坑整理一下。         信息及需">
+<meta property="og:type" content="article">
+<meta property="og:title" content="OpenSSL使用中继证书签发业务证书【兼容IOS设备】">
+<meta property="og:url" content="https://blog.lucat.fun/2022/sign-certificate/index.html">
+<meta property="og:site_name" content="LiYao′s Blog">
+<meta property="og:description" content="按照网上教程折腾一翻，发现签发的证书无法在IOS设备上信任，本篇总结了折腾的经过。 背景随着nas兴起，在搭建了plex，zerotier众多服务后，需要一个nginx代理整体内网流量。虽然有三个月免费的泛域名，但是来来回回挺麻烦的，不如直接自签一个 之前研究过自签证书，出现过ios这边证书有问题，但是其他环境没问题的情况。 这里也是想给nginx创建一个，踩坑整理一下。         信息及需">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://cdn.lucat.fun/blog/2022-09/iSCAKh-W7XcSr.jpg-p">
+<meta property="article:published_time" content="2022-09-09T00:20:28.000Z">
+<meta property="article:modified_time" content="2022-09-09T00:20:28.000Z">
+<meta property="article:author" content="Li Yao">
+<meta property="article:tag" content="证书">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cdn.lucat.fun/blog/2022-09/iSCAKh-W7XcSr.jpg-p"><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://blog.lucat.fun/2022/sign-certificate/"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//www.google-analytics.com" crossorigin=""/><link rel="preconnect" href="//busuanzi.ibruce.info"/><meta/><meta/><meta/><meta/><meta/><meta/><meta/><meta/><meta/><meta/><meta/><meta/><meta/><meta/><meta/><meta/><meta/><meta/><meta/><meta/><meta/><meta/><meta/><meta/><meta/><meta/><meta/><meta/><meta/><meta/><meta/><meta/><meta/><meta/><meta/><meta/><meta/><meta/><meta/><meta/><meta/><meta/><meta/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/node-snackbar/dist/snackbar.min.css" media="print" onload="this.media='all'"><script async="async" src="https://www.googletagmanager.com/gtag/js?id=G-ZMBB929J0F"></script><script>window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-ZMBB929J0F');
+</script><script>const GLOBAL_CONFIG = { 
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"search.xml","languages":{"hits_empty":"找不到您查询的内容：${query}"}},
+  translate: undefined,
+  noticeOutdate: {"limitDay":365,"position":"top","messagePrev":"你似乎正在查看一篇很久远的文章，本文编写于","messageNext":"天前，其中某些信息可能过期"},
+  highlight: {"plugin":"highlighjs","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":400},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: true,
+    post: true
+  },
+  runtime: '天',
+  date_suffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: {"limitCount":50,"languages":{"author":"作者: Li Yao","link":"链接: ","source":"来源: LiYao′s Blog","info":"著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。"}},
+  lightbox: 'fancybox',
+  Snackbar: {"chs_to_cht":"你已切换为繁体","cht_to_chs":"你已切换为简体","day_to_night":"你已切换为深色模式","night_to_day":"你已切换为浅色模式","bgLight":"#49b1f5","bgDark":"#2d3035","position":"top-right"},
+  source: {
+    jQuery: 'https://cdn.jsdelivr.net/npm/jquery@latest/dist/jquery.min.js',
+    justifiedGallery: {
+      js: 'https://cdn.jsdelivr.net/npm/justifiedGallery/dist/js/jquery.justifiedGallery.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/justifiedGallery/dist/css/justifiedGallery.min.css'
+    },
+    fancybox: {
+      js: 'https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.css'
+    }
+  },
+  isPhotoFigcaption: true,
+  islazyload: true,
+  isanchor: true
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'OpenSSL使用中继证书签发业务证书【兼容IOS设备】',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: undefined,
+  isToc: true,
+  postUpdate: '2022-09-09 08:20:28'
+}</script><noscript><style type="text/css">
+  #nav {
+    opacity: 1
+  }
+  .justified-gallery img {
+    opacity: 1
+  }
+
+  #recent-posts time,
+  #post-meta time {
+    display: inline !important
+  }
+</style></noscript><script>(win=>{
+    win.saveToLocal = {
+      set: function setWithExpiry(key, value, ttl) {
+        if (ttl === 0) return
+        const now = new Date()
+        const expiryDay = ttl * 86400000
+        const item = {
+          value: value,
+          expiry: now.getTime() + expiryDay,
+        }
+        localStorage.setItem(key, JSON.stringify(item))
+      },
+
+      get: function getWithExpiry(key) {
+        const itemStr = localStorage.getItem(key)
+
+        if (!itemStr) {
+          return undefined
+        }
+        const item = JSON.parse(itemStr)
+        const now = new Date()
+
+        if (now.getTime() > item.expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return item.value
+      }
+    }
+  
+    win.getScript = url => new Promise((resolve, reject) => {
+      const script = document.createElement('script')
+      script.src = url
+      script.async = true
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    })
+  
+      win.activateDarkMode = function () {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = function () {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+          if (t === 'dark') activateDarkMode()
+          else if (t === 'light') activateLightMode()
+        
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    })(window)</script><meta name="generator" content="Hexo 5.4.0"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="author-avatar"><img class="avatar-img" src= "/image/loading.svg" data-lazy-src="/image/avatar.jpg" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data"><div class="data-item is-center"><div class="data-item-link"><a href="/archives/"><div class="headline">文章</div><div class="length-num">9</div></a></div></div><div class="data-item is-center"><div class="data-item-link"><a href="/tags/"><div class="headline">标签</div><div class="length-num">9</div></a></div></div><div class="data-item is-center"><div class="data-item-link"><a href="/categories/"><div class="headline">分类</div><div class="length-num">2</div></a></div></div></div><hr/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首頁</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div><div class="menus_item"><a class="site-page" href="javascript:void(0);" rel="external nofollow noreferrer"><i class="fa-fw fas fa-heart"></i><span> 关于</span><i class="fas fa-chevron-down expand"></i></a><ul class="menus_item_child"><li><a class="site-page child" href="/about/"><i class="fa-fw fas fa-user"></i><span> 我</span></a></li></ul></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url('https://cdn.lucat.fun/blog/2022-09/iSCAKh-W7XcSr.jpg-w')"><nav id="nav"><span id="blog_name"><a id="site-name" href="/">LiYao′s Blog</a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首頁</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div><div class="menus_item"><a class="site-page" href="javascript:void(0);" rel="external nofollow noreferrer"><i class="fa-fw fas fa-heart"></i><span> 关于</span><i class="fas fa-chevron-down expand"></i></a><ul class="menus_item_child"><li><a class="site-page child" href="/about/"><i class="fa-fw fas fa-user"></i><span> 我</span></a></li></ul></div></div><div id="toggle-menu"><a class="site-page"><i class="fas fa-bars fa-fw"></i></a></div></div></nav><div id="post-info"><h1 class="post-title">OpenSSL使用中继证书签发业务证书【兼容IOS设备】</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2022-09-09T00:20:28.000Z" title="发表于 2022-09-09 08:20:28">2022-09-09</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2022-09-09T00:20:28.000Z" title="更新于 2022-09-09 08:20:28">2022-09-09</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%8A%80%E6%9C%AF/">技术</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="OpenSSL使用中继证书签发业务证书【兼容IOS设备】"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="post-content" id="article-container"><p>按照网上教程折腾一翻，发现签发的证书无法在IOS设备上信任，本篇总结了折腾的经过。</p>
+<h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p>随着nas兴起，在搭建了plex，zerotier众多服务后，需要一个nginx代理整体内网流量。虽然有三个月免费的泛域名，但是来来回回挺麻烦的，不如直接自签一个</p>
+<p>之前研究过自签证书，出现过ios这边证书有问题，但是其他环境没问题的情况。</p>
+<p>这里也是想给nginx创建一个，踩坑整理一下。</p>
+<div align="center">
+    <img src= "/image/loading.svg" data-lazy-src="https://cdn.lucat.fun/blog/2022-09/U4MQSM-KTptls.png-w" width="80%"/>
+</div>
+
+<h3 id="信息及需求梳理"><a href="#信息及需求梳理" class="headerlink" title="信息及需求梳理"></a>信息及需求梳理</h3><h4 id="结构"><a href="#结构" class="headerlink" title="结构"></a>结构</h4><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 根证书(发给手机等电脑信任一下)  -&gt;  中继证书(一般负责一整块业务)  -&gt;  业务证书 (具体服务，我这里是nginx)</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> rootCA  -&gt;  cloudCA  -&gt;  nginx service</span></span><br></pre></td></tr></table></figure>
+<h4 id="有效期"><a href="#有效期" class="headerlink" title="有效期"></a>有效期</h4><ul>
+<li>根证书：100年</li>
+<li>中继证书：10年</li>
+<li>业务证书：824天 </li>
+</ul>
+<p>因为给nginx签的，太长浏览器会报错，如果是后端服务用长一点应该没事</p>
+<h3 id="签发证书"><a href="#签发证书" class="headerlink" title="签发证书"></a>签发证书</h3><h4 id="1-创建工作目录"><a href="#1-创建工作目录" class="headerlink" title="1.创建工作目录"></a>1.创建工作目录</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 老样子，创建本次工作目录，防止与其他文件冲突</span></span><br><span class="line"><span class="built_in">cd</span> ~ &amp;&amp; mkdir ssl &amp;&amp; <span class="built_in">cd</span> ssl</span><br></pre></td></tr></table></figure>
+
+<h4 id="2-生成各级配置文件"><a href="#2-生成各级配置文件" class="headerlink" title="2.生成各级配置文件"></a>2.生成各级配置文件</h4><p>注意改组织名和最后业务证书的IP地址，域名</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 根证书配置文件</span></span><br><span class="line">cat &gt; rootCA.cnf &lt;&lt;<span class="string">EOF</span></span><br><span class="line"><span class="string">[ req ]</span></span><br><span class="line"><span class="string">default_bits        = 4096</span></span><br><span class="line"><span class="string">distinguished_name  = req_distinguished_name</span></span><br><span class="line"><span class="string">req_extensions      = SAN</span></span><br><span class="line"><span class="string">extensions          = SAN</span></span><br><span class="line"><span class="string">[ req_distinguished_name ]</span></span><br><span class="line"><span class="string">countryName             = CN</span></span><br><span class="line"><span class="string">stateOrProvinceName = Beijing</span></span><br><span class="line"><span class="string">localityName = Beijing</span></span><br><span class="line"><span class="string">0.organizationName  = LiYao&#x27;s House</span></span><br><span class="line"><span class="string">organizationalUnitName      = LiYao&#x27;s Private Service</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">[SAN]</span></span><br><span class="line"><span class="string">extendedKeyUsage    = serverAuth</span></span><br><span class="line"><span class="string">basicConstraints=CA:TRUE,pathlen:2</span></span><br><span class="line"><span class="string">subjectKeyIdentifier=hash</span></span><br><span class="line"><span class="string">authorityKeyIdentifier=keyid:always,issuer:always</span></span><br><span class="line"><span class="string">EOF</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 中继证书配置文件</span></span><br><span class="line">cat &gt; cloud.cnf &lt;&lt;<span class="string">EOF</span></span><br><span class="line"><span class="string">authorityKeyIdentifier=keyid,issuer</span></span><br><span class="line"><span class="string">basicConstraints=CA:FALSE</span></span><br><span class="line"><span class="string">keyUsage=digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment</span></span><br><span class="line"><span class="string">subjectAltName=@alt_names</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">[ req ]</span></span><br><span class="line"><span class="string">default_bits = 2048</span></span><br><span class="line"><span class="string">distinguished_name = req_distinguished_name</span></span><br><span class="line"><span class="string">req_extensions = SAN</span></span><br><span class="line"><span class="string">extensions = SAN</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">[ req_distinguished_name ]</span></span><br><span class="line"><span class="string">countryName = CN</span></span><br><span class="line"><span class="string">stateOrProvinceName = Beijing</span></span><br><span class="line"><span class="string">localityName = Beijing</span></span><br><span class="line"><span class="string">0.organizationName  = LiYao&#x27;s Private Service</span></span><br><span class="line"><span class="string">organizationalUnitName      = LiYao&#x27;s Cloud Dept</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">[SAN]</span></span><br><span class="line"><span class="string">extendedKeyUsage = serverAuth</span></span><br><span class="line"><span class="string">basicConstraints=CA:TRUE,pathlen:0</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">[v3_new]</span></span><br><span class="line"><span class="string">extendedKeyUsage = serverAuth</span></span><br><span class="line"><span class="string">EOF</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 业务证书</span></span><br><span class="line">cat &gt; nginx.cnf &lt;&lt;<span class="string">EOF</span></span><br><span class="line"><span class="string">[ req ]</span></span><br><span class="line"><span class="string">default_bits        = 4096</span></span><br><span class="line"><span class="string">distinguished_name  = req_distinguished_name</span></span><br><span class="line"><span class="string">req_extensions      = SAN</span></span><br><span class="line"><span class="string">extensions          = SAN</span></span><br><span class="line"><span class="string">[ req_distinguished_name ]</span></span><br><span class="line"><span class="string">countryName             = CN</span></span><br><span class="line"><span class="string">stateOrProvinceName = Beijing</span></span><br><span class="line"><span class="string">localityName = Beijing</span></span><br><span class="line"><span class="string">0.organizationName  = LiYao&#x27;s Cloud Dept</span></span><br><span class="line"><span class="string">organizationalUnitName      = LiYao&#x27;s Nginx Service</span></span><br><span class="line"><span class="string">[ alternate_names ]</span></span><br><span class="line"><span class="string">DNS.1 = localhost</span></span><br><span class="line"><span class="string">IP.1   = 192.168.1.1</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">[SAN]</span></span><br><span class="line"><span class="string">subjectAltName      = @alternate_names</span></span><br><span class="line"><span class="string">extendedKeyUsage    = serverAuth</span></span><br><span class="line"><span class="string">basicConstraints=CA:FALSE,pathlen:0</span></span><br><span class="line"><span class="string">subjectKeyIdentifier=hash</span></span><br><span class="line"><span class="string">EOF</span></span><br></pre></td></tr></table></figure>
+
+
+<h4 id="3-生成key文件"><a href="#3-生成key文件" class="headerlink" title="3.生成key文件"></a>3.生成key文件</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># openssl生成key，2048已经不安全，改为4096</span></span><br><span class="line">openssl genrsa -out rootCA.key 4096</span><br><span class="line">openssl genrsa -out cloud.key 4096</span><br><span class="line">openssl genrsa -out nginx.key 4096</span><br></pre></td></tr></table></figure>
+
+<h4 id="4-生成根证书"><a href="#4-生成根证书" class="headerlink" title="4.生成根证书"></a>4.生成根证书</h4><p>subj内容改成自己的</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">openssl req \</span><br><span class="line">	-newkey rsa:4096 \</span><br><span class="line">	-x509 \</span><br><span class="line">	-nodes \</span><br><span class="line">	-keyout rootCA.key \</span><br><span class="line">	-new \</span><br><span class="line">	-out rootCA.pem \</span><br><span class="line">	-subj &quot;/emailAddress=liyao@lucat.fun/CN=LiYao&#x27;s Root CA./C=CN/ST=Beijing/L=Beijing/O=LiYao&#x27;s House/OU=LiYao&#x27;s Private Service&quot; \</span><br><span class="line">	-config ./rootCA.cnf \</span><br><span class="line">	-reqexts SAN \</span><br><span class="line">	-extensions SAN \</span><br><span class="line">	-sha256 \</span><br><span class="line">	-days 36500</span><br></pre></td></tr></table></figure>
+
+<h4 id="5-生成中继证书csr及签发中继证书"><a href="#5-生成中继证书csr及签发中继证书" class="headerlink" title="5.生成中继证书csr及签发中继证书"></a>5.生成中继证书csr及签发中继证书</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">openssl req -new -sha256 \</span><br><span class="line">	-key cloud.key \</span><br><span class="line">	-subj <span class="string">&quot;/emailAddress=liyao@lucat.fun/CN=LiYao&#x27;s Cloud CA./C=CN/ST=Beijing/L=Beijing/O=LiYao&#x27;s Private Service/OU=LiYao&#x27;s Cloud Dept&quot;</span> \</span><br><span class="line">	-config ./cloud.cnf \</span><br><span class="line">	-reqexts SAN \</span><br><span class="line">	-extensions SAN \</span><br><span class="line">	-sha256 \</span><br><span class="line">	-out cloud.csr</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">openssl x509 -req \</span><br><span class="line">	-<span class="keyword">in</span> cloud.csr -CA rootCA.pem -CAkey rootCA.key \</span><br><span class="line">	-out cloud.pem \</span><br><span class="line">	-CAcreateserial  \</span><br><span class="line">	-days 3650 \</span><br><span class="line">	-sha256 \</span><br><span class="line">	-extensions SAN \</span><br><span class="line">	-extfile cloud.cnf</span><br></pre></td></tr></table></figure>
+
+<h4 id="6-生成业务证书csr及签发业务证书"><a href="#6-生成业务证书csr及签发业务证书" class="headerlink" title="6.生成业务证书csr及签发业务证书"></a>6.生成业务证书csr及签发业务证书</h4><p>这里，如果是给web使用的话，证书签发的时间不能超过825天，否则chrome或safari会提示证书不信任：<code>NET::ERR_CERT_VALIDITY_TOO_LONG</code>，意思证书时间过长。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">openssl req -new -sha256 \</span><br><span class="line">	-key nginx.key \</span><br><span class="line">	-subj <span class="string">&quot;/emailAddress=liyao@lucat.fun/CN=LiYao&#x27;s Nginx Service./C=CN/ST=Beijing/L=Beijing/O=LiYao&#x27;s Cloud Dept/OU=LiYao&#x27;s Nginx Service&quot;</span> \</span><br><span class="line">	-config ./nginx.cnf \</span><br><span class="line">	-reqexts SAN \</span><br><span class="line">	-extensions SAN \</span><br><span class="line">	-sha256 \</span><br><span class="line">	-out nginx.csr</span><br><span class="line"></span><br><span class="line">openssl x509 -req \</span><br><span class="line">	-<span class="keyword">in</span> nginx.csr -CA cloud.pem -CAkey cloud.key \</span><br><span class="line">	-out nginx.pem \</span><br><span class="line">	-CAcreateserial  \</span><br><span class="line">	-days 824 \</span><br><span class="line">	-sha256 \</span><br><span class="line">	-extensions SAN \</span><br><span class="line">	-extfile nginx.cnf</span><br></pre></td></tr></table></figure>
+
+<h3 id="MacOS配置"><a href="#MacOS配置" class="headerlink" title="MacOS配置"></a>MacOS配置</h3><p>执行<code>open .</code> 打开ssl目录，双击<code>rootCA.pem</code>安装根证书，双击修改证书信任策略为<code>始终信任</code></p>
+<div align="center">
+    <img src= "/image/loading.svg" data-lazy-src="https://cdn.lucat.fun/blog/2021-03/ilo2-FmlOWy.png-w" width="80%"/>
+</div>
+
+
+<p>退出浏览器重新打开，锁则变为绿色</p>
+<h3 id="Iphone设置"><a href="#Iphone设置" class="headerlink" title="Iphone设置"></a>Iphone设置</h3><p>使用隔空投送，将<code>rootCA.pem</code>推送至手机，用QQ，微信好像不行，不支持打开。</p>
+<ol>
+<li>打开系统设置，点击添加提示，信任描述文件。</li>
+<li>通用，关于本机下滑到底，证书信任设置中开启对证书的信任。</li>
+</ol>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="mailto:i@lucat.fun">Li Yao</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="https://blog.lucat.fun/2022/sign-certificate/">https://blog.lucat.fun/2022/sign-certificate/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow noreferrer" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://blog.lucat.fun" target="_blank">LiYao′s Blog</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E8%AF%81%E4%B9%A6/">证书</a></div><div class="post_share"><div class="addthis_inline_share_toolbox"></div><script src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-60acd501a7bc4e16" async="async"></script></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/2021/django-restframework-method-permission/"><img class="prev-cover" src= "/image/loading.svg" data-lazy-src="https://cdn.lucat.fun/blog/2021-04/wallhaven-rddgwm-3j0ZGJ.jpg-p" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">RBAC下DRF基于权限码的整体权限设计</div></div></a></div><div class="next-post pull-right"><a href="/2023/create-zerotier-p2p-network/"><img class="next-cover" src= "/image/loading.svg" data-lazy-src="https://cdn.lucat.fun/blog/2024-01/20220614160330_b6e7b-tuya.jpeg-p" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">Zerotier异地组网</div></div></a></div></nav><hr/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div id="waline-wrap"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%83%8C%E6%99%AF"><span class="toc-number">1.</span> <span class="toc-text">背景</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BF%A1%E6%81%AF%E5%8F%8A%E9%9C%80%E6%B1%82%E6%A2%B3%E7%90%86"><span class="toc-number">2.</span> <span class="toc-text">信息及需求梳理</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%BB%93%E6%9E%84"><span class="toc-number">2.1.</span> <span class="toc-text">结构</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%9C%89%E6%95%88%E6%9C%9F"><span class="toc-number">2.2.</span> <span class="toc-text">有效期</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%AD%BE%E5%8F%91%E8%AF%81%E4%B9%A6"><span class="toc-number">3.</span> <span class="toc-text">签发证书</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-%E5%88%9B%E5%BB%BA%E5%B7%A5%E4%BD%9C%E7%9B%AE%E5%BD%95"><span class="toc-number">3.1.</span> <span class="toc-text">1.创建工作目录</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-%E7%94%9F%E6%88%90%E5%90%84%E7%BA%A7%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6"><span class="toc-number">3.2.</span> <span class="toc-text">2.生成各级配置文件</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-%E7%94%9F%E6%88%90key%E6%96%87%E4%BB%B6"><span class="toc-number">3.3.</span> <span class="toc-text">3.生成key文件</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#4-%E7%94%9F%E6%88%90%E6%A0%B9%E8%AF%81%E4%B9%A6"><span class="toc-number">3.4.</span> <span class="toc-text">4.生成根证书</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#5-%E7%94%9F%E6%88%90%E4%B8%AD%E7%BB%A7%E8%AF%81%E4%B9%A6csr%E5%8F%8A%E7%AD%BE%E5%8F%91%E4%B8%AD%E7%BB%A7%E8%AF%81%E4%B9%A6"><span class="toc-number">3.5.</span> <span class="toc-text">5.生成中继证书csr及签发中继证书</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#6-%E7%94%9F%E6%88%90%E4%B8%9A%E5%8A%A1%E8%AF%81%E4%B9%A6csr%E5%8F%8A%E7%AD%BE%E5%8F%91%E4%B8%9A%E5%8A%A1%E8%AF%81%E4%B9%A6"><span class="toc-number">3.6.</span> <span class="toc-text">6.生成业务证书csr及签发业务证书</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#MacOS%E9%85%8D%E7%BD%AE"><span class="toc-number">4.</span> <span class="toc-text">MacOS配置</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Iphone%E8%AE%BE%E7%BD%AE"><span class="toc-number">5.</span> <span class="toc-text">Iphone设置</span></a></li></ol></div></div></div></div></main><footer id="footer" style="background-image: url('https://cdn.lucat.fun/blog/2022-09/iSCAKh-W7XcSr.jpg-w')"><div id="footer-wrap"><div class="copyright">&copy;2018 - 2024 By Li Yao</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener external nofollow noreferrer" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener external nofollow noreferrer" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div><div class="footer_custom_text">冀ICP备16019972号-2 网站托管于<a target="_blank" href="https://github.com/lucatisfun/lucatisfun.github.io" rel="external nofollow noreferrer noopener" data-pjax-state="">Github</a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside_config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="直达评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><i class="fas fa-arrow-up"></i></button></div></div><div id="local-search"><div class="search-dialog"><div class="search-dialog__title" id="local-search-title">本地搜索</div><div id="local-input-panel"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div></div><hr/><div id="local-search-results"></div><span class="search-close-button"><i class="fas fa-times"></i></span></div><div id="search-mask"></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="https://cdn.jsdelivr.net/npm/instant.page/instantpage.min.js" type="module"></script><script src="https://cdn.jsdelivr.net/npm/vanilla-lazyload/dist/lazyload.iife.min.js"></script><script src="https://cdn.jsdelivr.net/npm/node-snackbar/dist/snackbar.min.js"></script><script src="/js/search/local-search.js"></script><div class="js-pjax"><script>function loadWaline () {
+  function initWaline () {
+    const waline = new Waline(Object.assign({
+      el: '#waline-wrap',
+      serverURL: 'https://waline-4arrufjvc-liyao2598330.vercel.app/',
+      avatar: 'monsterid',
+      path: location.pathname,
+      emojiCDN: 'https://cdn.jsdelivr.net/gh/walinejs/emojis@1.0.0/tieba,https://cdn.jsdelivr.net/gh/walinejs/emojis@1.0.0/weibo,https://cdn.jsdelivr.net/gh/walinejs/emojis@1.0.0/bilibili',
+      emojiMaps: "",
+      visitor: false,
+      dark: 'html[data-theme="dark"]'
+    }, null))
+  }
+
+  if (typeof Waline === 'function') initWaline() 
+  else getScript('https://cdn.jsdelivr.net/npm/@waline/client/dist/Waline.min.js').then(initWaline)
+}
+
+if ('Waline' === 'Waline' || !true) {
+  if (true) btf.loadComment(document.getElementById('waline-wrap'),loadWaline)
+  else setTimeout(loadWaline, 0)
+} else {
+  function loadOtherComment () {
+    loadWaline()
+  }
+}</script></div><script defer="defer" id="ribbon" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/dist/canvas-ribbon.min.js" size="150" alpha="0.6" zIndex="-1" mobile="false" data-click="true"></script><script src="https://cdn.jsdelivr.net/npm/pjax/pjax.min.js"></script><script>let pjaxSelectors = [
+  'title',
+  '#config-diff',
+  '#body-wrap',
+  '#rightside-config-hide',
+  '#rightside-config-show',
+  '.js-pjax'
+]
+
+if (false) {
+  pjaxSelectors.unshift('meta[property="og:image"]', 'meta[property="og:title"]', 'meta[property="og:url"]')
+}
+
+var pjax = new Pjax({
+  elements: 'a:not([target="_blank"]):not([href="/music/"]):not([href="/no-pjax/"])',
+  selectors: pjaxSelectors,
+  cacheBust: false,
+  analytics: true,
+  scrollRestoration: false
+})
+
+document.addEventListener('pjax:send', function () {
+
+  // removeEventListener toc scroll 
+  window.removeEventListener('scroll', window.tocScrollFn)
+
+  typeof preloader === 'object' && preloader.initLoading()
+  
+  if (window.aplayers) {
+    for (let i = 0; i < window.aplayers.length; i++) {
+      if (!window.aplayers[i].options.fixed) {
+        window.aplayers[i].destroy()
+      }
+    }
+  }
+
+  typeof typed === 'object' && typed.destroy()
+
+  //reset readmode
+  const $bodyClassList = document.body.classList
+  $bodyClassList.contains('read-mode') && $bodyClassList.remove('read-mode')
+
+})
+
+document.addEventListener('pjax:complete', function () {
+  window.refreshFn()
+
+  document.querySelectorAll('script[data-pjax]').forEach(item => {
+    const newScript = document.createElement('script')
+    const content = item.text || item.textContent || item.innerHTML || ""
+    Array.from(item.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value))
+    newScript.appendChild(document.createTextNode(content))
+    item.parentNode.replaceChild(newScript, item)
+  })
+
+  GLOBAL_CONFIG.islazyload && window.lazyLoadInstance.update()
+
+  typeof chatBtnFn === 'function' && chatBtnFn()
+  typeof panguInit === 'function' && panguInit()
+
+  // google analytics
+  typeof gtag === 'function' && gtag('config', 'G-ZMBB929J0F', {'page_path': window.location.pathname});
+
+  // baidu analytics
+  typeof _hmt === 'object' && _hmt.push(['_trackPageview',window.location.pathname]);
+
+  typeof loadMeting === 'function' && document.getElementsByClassName('aplayer').length && loadMeting()
+
+  // Analytics
+  if (false) {
+    MtaH5.pgv()
+  }
+
+  // prismjs
+  typeof Prism === 'object' && Prism.highlightAll()
+
+  typeof preloader === 'object' && preloader.endLoading()
+})
+
+document.addEventListener('pjax:error', (e) => {
+  if (e.request.status === 404) {
+    pjax.loadUrl('/404.html')
+  }
+})</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>
